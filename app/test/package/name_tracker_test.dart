@@ -70,9 +70,27 @@ void main() {
     final nameTracker = NameTracker(null);
     nameTracker.add(TrackedPackage.simple('webb'));
 
-    test('morning', () async {
+    test('webb', () async {
       expect(await nameTracker.accept('vvebb'), 'webb');
       expect(await nameTracker.accept('vvvebb'), isNull);
+    });
+  });
+
+  group('multiple homoglyphs', () {
+    final nameTracker = NameTracker(null);
+    nameTracker.add(TrackedPackage.simple('hello_world'));
+
+    test('only one l replaced', () async {
+      expect(await nameTracker.accept('hello_wor1d'), 'hello_world');
+    });
+    test('all l replaced', () async {
+      expect(await nameTracker.accept('he11o_wor1d'), 'hello_world');
+    });
+    test('one l one o replaced', () async {
+      expect(await nameTracker.accept('hello_w0r1d'), 'hello_world');
+    });
+    test('all homoglyphs replaced', () async {
+      expect(await nameTracker.accept('he110_w0r1d'), 'hello_world');
     });
   });
 

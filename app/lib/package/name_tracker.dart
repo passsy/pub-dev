@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:clock/clock.dart';
 import 'package:gcloud/service_scope.dart' as ss;
@@ -345,14 +346,43 @@ Iterable<String> _generateConflictingNames(String name) sync* {
   if (reduced.endsWith('s') && reduced.length >= 4) {
     yield reduced.substring(0, reduced.length - 1);
   }
-  for (final pair in _homoglyphPairs) {
-    if (reduced.contains(pair[0])) {
-      yield reduced.replaceAll(pair[0], pair[1]);
-    }
-    if (reduced.contains(pair[1])) {
-      yield reduced.replaceAll(pair[1], pair[0]);
+  yield* _homoglyphPermutations(reduced);
+}
+
+/// Generates all possible permutations of the input [text] by replacing each character
+/// that is part of a homoglyph pair with its corresponding homoglyph.
+///
+/// Returns an iterable of strings, each of which is a permutation of the input string where one or more characters
+/// have been replaced with their corresponding homoglyphs.
+Iterable<String> _homoglyphPermutations(String text) {
+  final homoglyphs = _homoglyphPairs.expand((pair) => pair).toSet();
+  final chars = text.split('');
+  final queue = Queue<List<String>>();
+  final results = <String>{};
+
+  queue.add(chars);
+  while (queue.isNotEmpty) {
+    final currentChars = queue.removeFirst();
+    final currentString = currentChars.join();
+    if (!results.contains(currentString)) {
+      results.add(currentString);
+      for (int i = 0; i < currentChars.length; i++) {
+        if (homoglyphs.contains(currentChars[i])) {
+          for (final pair in _homoglyphPairs) {
+            if (pair.contains(currentChars[i])) {
+              final other =
+                  pair.first == currentChars[i] ? pair.last : pair.first;
+              final newChars = List<String>.from(currentChars);
+              newChars[i] = other;
+              queue.add(newChars);
+            }
+          }
+        }
+      }
     }
   }
+
+  return results;
 }
 
 /// Homoglyphs are characters with different meanings, that look similar/identical to each other.
